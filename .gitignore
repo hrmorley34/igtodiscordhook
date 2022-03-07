@@ -155,3 +155,4 @@ cython_debug/
 # Secrets
 instagrapi_settings.json
 options.json
+database.db

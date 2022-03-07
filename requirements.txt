@@ -1,3 +1,4 @@
 instagrapi~=1.16.14
 py-cord~=2.0.0b4
 python-dotenv~=0.19.2
+sqlmodel~=0.0.6
