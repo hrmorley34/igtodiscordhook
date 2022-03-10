@@ -48,7 +48,18 @@ class IGHook:
                 session, int(post.pk), account_pk=int(user.pk)
             )
 
-            paths = self.client.album_download(int(post.pk), DEST_FOLDER)
+            if post.media_type == 1:
+                # media_type of 1 is photo
+                paths = [self.client.photo_download(int(post.pk), DEST_FOLDER)]
+            elif post.media_type == 2:
+                # media_type of 2 is video/igtv/reel
+                paths = [self.client.video_download(int(post.pk), DEST_FOLDER)]
+            elif post.media_type == 8:
+                # media_type of 8 is album
+                paths = self.client.album_download(int(post.pk), DEST_FOLDER)
+            else:
+                raise ValueError(f"Unknown media_type: {post.media_type}")
+
             files = [
                 discord.File(p, filename=f"page{i}{p.suffix}")
                 for i, p in enumerate(paths)
