@@ -44,9 +44,8 @@ class IGHook:
         with TemporaryDirectory() as tmpdir:
             DEST_FOLDER = Path(tmpdir)
 
-            db_post = self.db.make_ig_post(
-                session, int(post.pk), account_pk=int(user.pk)
-            )
+            account = self.db.get_ig_account(session, int(user.pk), self.webhook.id)
+            db_post = account.make_post(session, int(post.pk))
 
             if post.media_type == 1:
                 # media_type of 1 is photo
@@ -94,7 +93,7 @@ class IGHook:
         user: instagrapi.types.User,
     ) -> Iterable[instagrapi.types.Media]:
         "Get all posts published after database min_time, and return them in reverse chronological order"
-        db_account = self.db.get_ig_account(session, int(user.pk))
+        db_account = self.db.get_ig_account(session, int(user.pk), self.webhook.id)
 
         last_dt = datetime.utcnow().replace(tzinfo=timezone.utc)
         while last_dt >= db_account.aware_min_time:
@@ -116,7 +115,7 @@ class IGHook:
     ) -> List[instagrapi.types.Media]:
         unsent_posts: List[instagrapi.types.Media] = []
 
-        db_account = self.db.get_ig_account(session, int(user.pk))
+        db_account = self.db.get_ig_account(session, int(user.pk), self.webhook.id)
         existing_pks = {
             p.ig_pk for p in db_account.ig_posts if p.webhook_message_id is not None
         }
@@ -150,7 +149,7 @@ class IGHook:
         posts: Iterable[instagrapi.types.Media],
     ) -> None:
         with self.db.session() as session:
-            db_account = self.db.get_ig_account(session, int(user.pk))
+            db_account = self.db.get_ig_account(session, int(user.pk), self.webhook.id)
             existing_pks = {int(p.pk) for p in posts}
 
             for db_post in db_account.ig_posts:
