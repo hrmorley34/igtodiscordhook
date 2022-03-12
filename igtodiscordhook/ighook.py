@@ -3,18 +3,23 @@ import discord
 import instagrapi
 import instagrapi.types
 from pathlib import Path
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.engine import Engine
 from sqlmodel import Session
 from tempfile import TemporaryDirectory
 from typing import Iterable, List, Optional
 
 from .database import DB
+from . import imaging
 
 
 class IGHook:
     client: instagrapi.Client
     webhook: discord.SyncWebhook
     db: DB
+
+    post_width: int = 2
+    post_pad: int = 20
 
     def __init__(self, webhook_url: str, engine: Engine):
         self.client = instagrapi.Client()
@@ -59,9 +64,39 @@ class IGHook:
             else:
                 raise ValueError(f"Unknown media_type: {post.media_type}")
 
+            merged_paths: list[Path] = []
+            mergeable_images: list[Image.Image] = []
+            for i, p in enumerate(paths):
+                merge = i == (len(paths) - 1)
+                readd_path = False
+                try:
+                    im = imaging.load(p)
+                except UnidentifiedImageError:
+                    # may be video; bundle up the previous images and then put this on the end
+                    merge = True
+                    readd_path = True
+                else:
+                    mergeable_images.append(im)
+
+                if merge:
+                    for im in imaging.combine_images_row(
+                        mergeable_images,
+                        width=self.post_width,
+                        pad=self.post_pad,
+                    ):
+                        merged_paths.append(imaging.save(DEST_FOLDER, im))
+                        im.close()
+                    for im in mergeable_images:
+                        im.close()
+                    mergeable_images = []
+                if readd_path:
+                    merged_paths.append(p)
+
+            assert len(mergeable_images) == 0
+
             files = [
                 discord.File(p, filename=f"page{i}{p.suffix}")
-                for i, p in enumerate(paths)
+                for i, p in enumerate(merged_paths)
             ]
 
             try:
