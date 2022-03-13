@@ -1,4 +1,8 @@
 {
-    "igaccount": "",
-    "webhook": ""
+    "accounts": [
+        {
+            "igaccount": "",
+            "webhook": ""
+        }
+    ]
 }

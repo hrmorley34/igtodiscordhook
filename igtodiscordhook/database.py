@@ -39,17 +39,19 @@ class IGAccount(SQLModel, table=True):
     ig_posts: List["Post"] = Relationship(back_populates="ig_account")
 
     @classmethod
-    def get(cls, session: Session, pk: int, webhook_id: int):
-        query = select(cls).where(cls.ig_pk == pk, cls.webhook_id == webhook_id)
+    def get(cls, session: Session, pk: int | str, webhook_id: int):
+        pk_i = int(pk)
+        query = select(cls).where(cls.ig_pk == pk_i, cls.webhook_id == webhook_id)
         acc = session.exec(query).one_or_none()
         if acc is None:
-            acc = cls(ig_pk=pk, webhook_id=webhook_id)
+            acc = cls(ig_pk=pk_i, webhook_id=webhook_id)
             session.add(acc)
         return acc
 
-    def make_post(self, session: Session, pk: int) -> Post:
+    def make_post(self, session: Session, pk: int | str) -> Post:
+        pk_i = int(pk)
         # use ig_account_id=-1 to remove type errors (overwritten by ig_account=self)
-        post = Post(ig_account_id=-1, ig_account=self, ig_pk=pk)
+        post = Post(ig_account_id=-1, ig_account=self, ig_pk=pk_i)
         session.add(post)
         return post
 
@@ -64,8 +66,10 @@ class DB:
     def session(self) -> Session:
         return Session(self.engine)
 
-    def get_ig_account(self, session: Session, pk: int, webhook_id: int) -> IGAccount:
+    def get_ig_account(
+        self, session: Session, pk: int | str, webhook_id: int
+    ) -> IGAccount:
         return IGAccount.get(session, pk=pk, webhook_id=webhook_id)
 
-    def make_ig_post(self, session: Session, pk: int, account: IGAccount) -> Post:
+    def make_ig_post(self, session: Session, pk: int | str, account: IGAccount) -> Post:
         return account.make_post(session, pk)

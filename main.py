@@ -4,7 +4,7 @@ from os import environ
 from pathlib import Path
 from sqlmodel import create_engine
 
-from igtodiscordhook.ighook import IGHook
+from igtodiscordhook.ighook import IGHookManager
 
 
 if __name__ == "__main__":
@@ -15,17 +15,17 @@ if __name__ == "__main__":
     )
     with open("options.json", "r") as f:
         OPTIONS = json.load(f)
-    USER_USERNAME = OPTIONS["igaccount"]
     SETTINGS_FILE = Path("./instagrapi_settings.json")
 
     engine = create_engine("sqlite:///database.db", echo=False)
 
-    ighook = IGHook(OPTIONS["webhook"], engine)
-    ighook.login_ig(**CREDENTIALS)
+    manager = IGHookManager(engine)
+    manager.login_ig(**CREDENTIALS, settings_file=SETTINGS_FILE)
 
-    USER_DATA = ighook.client.user_info_by_username(USER_USERNAME)
+    for accopts in OPTIONS["accounts"]:
+        USER_USERNAME = accopts["igaccount"]
+        USER_ID = manager.username_to_id(USER_USERNAME)
+        ighook = manager.get_hook(USER_ID, accopts["webhook"])
+        ighook.update_hook()
 
-    with ighook.db.session() as session:
-        posts = list(ighook.get_all_posts(session, USER_DATA))
-    ighook.push_unsent_posts(USER_DATA, posts)
-    ighook.delete_missing_posts(USER_DATA, posts)
+    manager.dump_settings(settings_file=SETTINGS_FILE)
