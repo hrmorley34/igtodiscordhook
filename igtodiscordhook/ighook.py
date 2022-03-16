@@ -44,6 +44,14 @@ class IGHookManager:
     ) -> "IGHook":
         return IGHook(user_pk, webhook, client=self.client, db=self.db)
 
+    def get_hook_from_username(
+        self, username: str, webhook: discord.SyncWebhook | str
+    ) -> "IGHook":
+        user_data = self.client.user_info_by_username(username, use_cache=True)
+        hook = self.get_hook(user_data.pk, webhook)
+        hook.update_hints(user_data)
+        return hook
+
 
 class IGHook:
     client: instagrapi.Client
@@ -249,3 +257,13 @@ class IGHook:
             posts = list(self.get_all_posts(session))
         self.push_unsent_posts(posts)
         self.delete_missing_posts(posts)
+
+    def update_hints(self, data: instagrapi.types.User | None = None) -> None:
+        if data is None:
+            data = self.get_user()
+
+        with self.db.session() as session:
+            ig = self.get_db_ig_account(session)
+            ig.ig_hint_username = data.username
+            session.add(ig)
+            session.commit()

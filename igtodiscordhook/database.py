@@ -22,6 +22,7 @@ class IGAccount(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     ig_pk: int
+    ig_hint_username: Optional[str] = None
     webhook_id: int
     min_time: datetime = Field(default_factory=datetime.utcnow)
 

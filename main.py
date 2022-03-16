@@ -26,8 +26,7 @@ if __name__ == "__main__":
     all_unsents: list[tuple[IGHook, instagrapi.types.Media]] = []
     for accopts in OPTIONS["accounts"]:
         USER_USERNAME = accopts["igaccount"]
-        USER_ID = manager.username_to_id(USER_USERNAME)
-        ighook = manager.get_hook(USER_ID, accopts["webhook"])
+        ighook = manager.get_hook_from_username(USER_USERNAME, accopts["webhook"])
 
         with ighook.db.session() as session:
             posts = list(ighook.get_all_posts(session))
