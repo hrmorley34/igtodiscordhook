@@ -39,7 +39,10 @@ if __name__ == "__main__":
         ighook.delete_missing_posts(posts)
 
     all_unsents.sort(key=lambda pair: pair[1].taken_at)
-    for ighook, post in all_unsents:
+    countlen = len(str(len(all_unsents)))
+    print(f"Posted {str(0).rjust(countlen)}/{len(all_unsents)}")
+    for i, (ighook, post) in enumerate(all_unsents, 1):
         ighook.push_post(post)
+        print(f"Posted {str(i).rjust(countlen)}/{len(all_unsents)}")
 
     manager.dump_settings(settings_file=SETTINGS_FILE)
